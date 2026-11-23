@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import platform
+import re
 import shutil
 import socket
 import time
@@ -22,10 +23,18 @@ __all__ = ["collect_system_info"]
 
 
 def _cpu_model() -> str:
+    model = ""
     for line in read_text("/proc/cpuinfo").splitlines():
         if line.lower().startswith("model name"):
-            return line.split(":", 1)[1].strip()
-    return platform.processor() or "Unknown"
+            model = line.split(":", 1)[1].strip()
+            break
+    model = model or platform.processor() or "Unknown"
+    intel = re.search(r"i[3579]-[0-9A-Za-z]+", model)
+    if intel:
+        return f"Intel Core {intel.group(0)}"
+    if "Ryzen" in model:
+        return " ".join(model.split()[:4])
+    return " ".join(model.split())[:46]
 
 
 def _gpu_model() -> str:
@@ -33,7 +42,9 @@ def _gpu_model() -> str:
     if result.ok:
         gpus = parse_lspci(result.stdout)
         if gpus:
-            return gpus[0]
+            gpu = re.sub(r"\s*\[[^\]]*\]", "", gpus[0])
+            gpu = gpu.replace(" Corporation", "").replace(" corporation", "")
+            return " ".join(gpu.split())[:52]
     return "—"
 
 

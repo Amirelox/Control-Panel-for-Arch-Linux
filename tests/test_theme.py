@@ -14,7 +14,8 @@ def test_hyprland_color_forms() -> None:
 
 def test_mix_and_palette() -> None:
     assert _mix("#000000", "#ffffff", 0.5) == "#808080"
+    assert load_palette().accent == "#d6a45f"
     palette = load_palette("violet")
-    assert palette.accent == "#d9b8ff"
+    assert palette.accent == "#b9a7d8"
     assert palette.bg.startswith("#")
     assert palette.accent_fg.startswith("#")

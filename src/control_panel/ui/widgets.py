@@ -18,8 +18,8 @@ from PyQt6.QtCore import (
 from PyQt6.QtGui import (
     QColor,
     QFont,
+    QFontDatabase,
     QIcon,
-    QLinearGradient,
     QPainter,
     QPainterPath,
     QPen,
@@ -53,6 +53,7 @@ from ..core.config import Settings
 from ..core.parsers import format_bytes
 
 __all__ = [
+    "ActivityChart",
     "BasePage",
     "Card",
     "CodeEditor",
@@ -66,6 +67,7 @@ __all__ = [
     "Sparkline",
     "StatCard",
     "ToastManager",
+    "TwoColumn",
     "ask",
     "ask_text",
     "theme_icon",
@@ -167,7 +169,7 @@ def theme_icon(name: str, fallback: QStyle.StandardPixmap | None = None) -> QIco
 
 
 class SearchField(QLineEdit):
-    def __init__(self, placeholder: str = "Search…", parent: QWidget | None = None) -> None:
+    def __init__(self, placeholder: str = "Search", parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setPlaceholderText(placeholder)
         self.setClearButtonEnabled(True)
@@ -206,6 +208,45 @@ class DataTable(QTreeWidget):
                 else QHeaderView.ResizeMode.ResizeToContents,
             )
         self.setTextElideMode(Qt.TextElideMode.ElideRight)
+        self._mono_columns: dict[int, bool] = {}
+        self._mono_font = QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont)
+        self._mono_font.setPointSizeF(9.5)
+
+    def set_mono_columns(self, *columns: int, right: bool = True) -> None:
+        for column in columns:
+            self._mono_columns[column] = right
+        self._apply_mono()
+
+    def addTopLevelItem(self, item) -> None:
+        super().addTopLevelItem(item)
+        for column, right in self._mono_columns.items():
+            item.setFont(column, self._mono_font)
+            if right:
+                item.setTextAlignment(
+                    column, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+                )
+
+    def _apply_mono(self) -> None:
+        for index in range(self.topLevelItemCount()):
+            item = self.topLevelItem(index)
+            for column, right in self._mono_columns.items():
+                item.setFont(column, self._mono_font)
+                if right:
+                    item.setTextAlignment(
+                        column, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+                    )
+
+    def fit_rows(self, *, max_rows: int = 10, empty_height: int = 128) -> None:
+        count = self.topLevelItemCount()
+        if count == 0:
+            self.setFixedHeight(empty_height)
+            return
+        row_height = self.sizeHintForRow(0)
+        if row_height <= 0:
+            row_height = 30
+        header_height = max(30, self.header().height())
+        height = header_height + row_height * min(count, max_rows) + 8
+        self.setFixedHeight(max(empty_height, height))
 
     def selected_text(self, column: int = 0) -> str | None:
         item = self.currentItem()
@@ -225,7 +266,7 @@ class KeyValueGrid(QWidget):
         super().__init__(parent)
         self._layout = QGridLayout(self)
         self._layout.setContentsMargins(0, 0, 0, 0)
-        self._layout.setHorizontalSpacing(18)
+        self._layout.setHorizontalSpacing(16)
         self._layout.setVerticalSpacing(8)
         self._layout.setColumnStretch(1, 1)
         self._values: dict[str, QLabel] = {}
@@ -273,31 +314,20 @@ class StatCard(QFrame):
         value: str = "—",
         subtitle: str = "",
         *,
-        icon: str = "",
-        fallback: QStyle.StandardPixmap | None = None,
-        minimum_width: int = 158,
+        minimum_width: int = 160,
     ) -> None:
         super().__init__()
         self.setObjectName("StatCard")
         self.setMinimumWidth(minimum_width)
-        self.setMinimumHeight(82)
+        self.setMinimumHeight(108)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(14, 12, 14, 12)
-        layout.setSpacing(3)
+        layout.setContentsMargins(20, 16, 20, 16)
+        layout.setSpacing(4)
 
-        top = QHBoxLayout()
-        top.setSpacing(6)
-        self.title_label = QLabel(title.upper())
+        self.title_label = QLabel(title)
         self.title_label.setObjectName("StatTitle")
-        top.addWidget(self.title_label)
-        top.addStretch()
-        if icon:
-            icon_label = QLabel()
-            icon_label.setPixmap(theme_icon(icon, fallback).pixmap(15, 15))
-            icon_label.setObjectName("Muted")
-            top.addWidget(icon_label)
-        layout.addLayout(top)
+        layout.addWidget(self.title_label)
 
         self.value_label = QLabel(value)
         self.value_label.setObjectName("StatValue")
@@ -323,21 +353,27 @@ class Card(QFrame):
         super().__init__(parent)
         self.setObjectName("Card")
         outer = QVBoxLayout(self)
-        outer.setContentsMargins(14, 12, 14, 12)
-        outer.setSpacing(9)
+        outer.setContentsMargins(20, 16, 20, 16)
+        outer.setSpacing(12)
         self.header = QHBoxLayout()
         self.header.setSpacing(8)
         self.title_label = QLabel(title)
-        self.title_label.setObjectName("Muted")
+        self.title_label.setObjectName("CardTitle")
         self.title_label.setVisible(bool(title))
         self.header.addWidget(self.title_label)
         self.header.addStretch()
         outer.addLayout(self.header)
         self.body = QVBoxLayout()
-        self.body.setSpacing(8)
+        self.body.setSpacing(12)
         outer.addLayout(self.body)
 
     def add(self, widget: QWidget) -> QWidget:
+        if isinstance(widget, QPushButton) and widget.objectName() in {
+            "Primary",
+            "Danger",
+            "Success",
+        }:
+            widget.setMaximumWidth(280)
         self.body.addWidget(widget)
         return widget
 
@@ -362,14 +398,15 @@ class ProgressRow(QWidget):
         super().__init__(parent)
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(10)
+        layout.setSpacing(12)
         self.label = QLabel(label)
+        self.label.setObjectName("Muted")
         self.label.setFixedWidth(label_width)
         self.bar = QProgressBar()
         self.bar.setRange(0, 100)
         self.bar.setTextVisible(False)
         self.value = QLabel("—")
-        self.value.setObjectName("Hint")
+        self.value.setObjectName("MonoHint")
         self.value.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         self.value.setMinimumWidth(value_width)
         layout.addWidget(self.label)
@@ -384,24 +421,29 @@ class ProgressRow(QWidget):
 
 
 class Sparkline(QWidget):
-    """Tiny dependency-free line chart."""
+    """Compact throughput chart without decoration."""
 
     def __init__(
         self,
-        samples: int = 60,
+        samples: int = 80,
         parent: QWidget | None = None,
         *,
         ceiling: float = 0.0,
     ) -> None:
         super().__init__(parent)
         self._values: deque[float] = deque(maxlen=samples)
-        self._colour = QColor("#d9b8ff")
+        self._colour = QColor("#d6a45f")
+        self._border = QColor("#2c2d33")
         self._ceiling = max(0.0, ceiling)
-        self.setMinimumHeight(36)
+        self.setMinimumHeight(64)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
     def set_colour(self, colour: str) -> None:
         self._colour = QColor(colour)
+        self.update()
+
+    def set_border(self, colour: str) -> None:
+        self._border = QColor(colour)
         self.update()
 
     def append(self, value: float) -> None:
@@ -412,14 +454,12 @@ class Sparkline(QWidget):
         del event
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        rect = self.rect().adjusted(1, 3, -1, -3)
+        rect = self.rect().adjusted(0, 6, 0, -6)
         if rect.width() <= 2 or rect.height() <= 2:
             return
+        painter.setPen(QPen(self._border, 1))
+        painter.drawLine(rect.bottomLeft(), rect.bottomRight())
         if len(self._values) < 2:
-            painter.setPen(
-                QPen(QColor(self._colour.red(), self._colour.green(), self._colour.blue(), 70), 1)
-            )
-            painter.drawLine(rect.bottomLeft(), rect.bottomRight())
             return
 
         values = list(self._values)
@@ -433,18 +473,161 @@ class Sparkline(QWidget):
         path.moveTo(points[0][0], points[0][1])
         for x, y in points[1:]:
             path.lineTo(x, y)
-
-        fill = QPainterPath(path)
-        fill.lineTo(points[-1][0], rect.bottom())
-        fill.lineTo(points[0][0], rect.bottom())
-        fill.closeSubpath()
-        gradient = QLinearGradient(0, rect.top(), 0, rect.bottom())
-        colour = self._colour
-        gradient.setColorAt(0.0, QColor(colour.red(), colour.green(), colour.blue(), 70))
-        gradient.setColorAt(1.0, QColor(colour.red(), colour.green(), colour.blue(), 4))
-        painter.fillPath(fill, gradient)
-        painter.setPen(QPen(colour, 1.6))
+        painter.setPen(QPen(self._colour, 1.6))
         painter.drawPath(path)
+
+
+class ActivityChart(QWidget):
+    """A small, deliberate CPU/memory history chart."""
+
+    def __init__(self, samples: int = 60, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._cpu: deque[float] = deque(maxlen=samples)
+        self._memory: deque[float] = deque(maxlen=samples)
+        self._accent = QColor("#d6a45f")
+        self._muted = QColor("#989ba4")
+        self._border = QColor("#2c2d33")
+        self._mono_font = "Monospace"
+        self.setMinimumHeight(230)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+    def configure(self, palette, mono_font: str) -> None:
+        self._accent = QColor(palette.accent)
+        self._muted = QColor(palette.muted)
+        self._border = QColor(palette.border)
+        self._mono_font = mono_font
+        self.update()
+
+    def append(self, cpu: float, memory: float) -> None:
+        self._cpu.append(max(0.0, min(100.0, cpu)))
+        self._memory.append(max(0.0, min(100.0, memory)))
+        self.update()
+
+    def paintEvent(self, event) -> None:
+        del event
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setFont(QFont(self._mono_font, 9))
+        metrics = painter.fontMetrics()
+        left = 46
+        top = 30
+        right = self.width() - 12
+        bottom = self.height() - 24
+        if right - left < 20 or bottom - top < 20:
+            return
+
+        grid = QPen(self._border, 1)
+        for index, value in enumerate((100, 50, 0)):
+            y = int(top + (bottom - top) * index / 2)
+            painter.setPen(grid)
+            painter.drawLine(left, y, right, y)
+            painter.setPen(self._muted)
+            painter.drawText(
+                0,
+                int(y - metrics.height() / 2 + 1),
+                left - 8,
+                metrics.height(),
+                Qt.AlignmentFlag.AlignRight,
+                f"{value}%",
+            )
+
+        legend_y = 8
+        painter.setPen(QPen(self._accent, 2))
+        painter.drawLine(left, legend_y + 7, left + 16, legend_y + 7)
+        painter.setPen(self._muted)
+        painter.drawText(left + 22, legend_y + 11, "CPU")
+        painter.setPen(QPen(self._muted, 2))
+        painter.drawLine(left + 64, legend_y + 7, left + 80, legend_y + 7)
+        painter.drawText(left + 86, legend_y + 11, "Memory")
+
+        if len(self._cpu) < 2:
+            painter.setPen(self._muted)
+            painter.drawText(
+                left,
+                top,
+                right - left,
+                bottom - top,
+                Qt.AlignmentFlag.AlignCenter,
+                "Collecting samples…",
+            )
+            return
+
+        def points(series: deque[float]) -> list[tuple[float, float]]:
+            step = (right - left) / max(1, len(series) - 1)
+            return [
+                (left + index * step, bottom - (value / 100.0) * (bottom - top))
+                for index, value in enumerate(series)
+            ]
+
+        for series, colour, width in (
+            (self._memory, self._muted, 1.2),
+            (self._cpu, self._accent, 1.8),
+        ):
+            values = points(series)
+            path = QPainterPath()
+            path.moveTo(values[0][0], values[0][1])
+            for x, y in values[1:]:
+                path.lineTo(x, y)
+            painter.setPen(QPen(colour, width))
+            painter.drawPath(path)
+
+        painter.setPen(self._muted)
+        painter.drawText(
+            left,
+            self.height() - 16,
+            right - left,
+            metrics.height(),
+            Qt.AlignmentFlag.AlignRight,
+            "60 s",
+        )
+
+
+class TwoColumn(QWidget):
+    """Two cards side by side, stacked when the window gets narrow."""
+
+    def __init__(
+        self,
+        left: QWidget,
+        right: QWidget,
+        *,
+        breakpoint: int = 840,
+        left_stretch: int = 2,
+        right_stretch: int = 1,
+        parent: QWidget | None = None,
+    ) -> None:
+        super().__init__(parent)
+        self._left = left
+        self._right = right
+        self._breakpoint = breakpoint
+        self._left_stretch = left_stretch
+        self._right_stretch = right_stretch
+        self._stacked: bool | None = None
+        self._grid = QGridLayout(self)
+        self._grid.setContentsMargins(0, 0, 0, 0)
+        self._grid.setHorizontalSpacing(16)
+        self._grid.setVerticalSpacing(16)
+        self._apply(force=True)
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        self._apply()
+
+    def _apply(self, *, force: bool = False) -> None:
+        stacked = self.width() < self._breakpoint
+        if not force and stacked == self._stacked:
+            return
+        self._stacked = stacked
+        self._grid.removeWidget(self._left)
+        self._grid.removeWidget(self._right)
+        self._grid.addWidget(self._left, 0, 0)
+        if stacked:
+            self._grid.addWidget(self._right, 1, 0)
+            self._grid.setColumnStretch(0, 1)
+            self._grid.setColumnStretch(1, 0)
+        else:
+            self._grid.addWidget(self._right, 0, 1)
+            self._grid.setColumnStretch(0, self._left_stretch)
+            self._grid.setColumnStretch(1, self._right_stretch)
 
 
 class EmptyState(QWidget):
@@ -454,7 +637,7 @@ class EmptyState(QWidget):
         layout.setContentsMargins(12, 26, 12, 26)
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         heading = QLabel(title)
-        heading.setStyleSheet("font-size: 15px; font-weight: 600;")
+        heading.setStyleSheet("font-size: 15px; font-weight: 500;")
         heading.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(heading)
         if text:
@@ -519,7 +702,7 @@ class CodeEditor(QPlainTextEdit):
     def paint_line_numbers(self, event) -> None:
         painter = QPainter(self._line_area)
         painter.fillRect(event.rect(), QColor(0, 0, 0, 0))
-        painter.setPen(QColor("#6f6778"))
+        painter.setPen(QColor("#6f727a"))
         block = self.firstVisibleBlock()
         number = block.blockNumber()
         top = round(self.blockBoundingGeometry(block).translated(self.contentOffset()).top())
@@ -601,27 +784,19 @@ class Toast(QFrame):
         self.setMaximumWidth(460)
         self.setMinimumWidth(240)
         colours = {
-            "info": "#89b4fa",
-            "success": "#a6e3a1",
-            "warning": "#f9e2af",
-            "error": "#f38ba8",
+            "info": "#8aa9c9",
+            "success": "#83bd91",
+            "warning": "#d6a45f",
+            "error": "#d97b7b",
         }
         colour = colours.get(level, colours["info"])
         self.setStyleSheet(f"QFrame#Toast {{ border-left: 3px solid {colour}; }}")
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(12, 9, 12, 9)
-        layout.setSpacing(9)
-        icon_label = QLabel()
-        icon_names = {
-            "info": "dialog-information",
-            "success": "dialog-information",
-            "warning": "dialog-warning",
-            "error": "dialog-error",
-        }
-        icon = theme_icon(icon_names.get(level, "dialog-information"))
-        if not icon.isNull():
-            icon_label.setPixmap(icon.pixmap(16, 16))
-        layout.addWidget(icon_label, 0, Qt.AlignmentFlag.AlignTop)
+        layout.setContentsMargins(12, 12, 16, 12)
+        layout.setSpacing(10)
+        dot = QLabel("●")
+        dot.setStyleSheet(f"color: {colour}; font-size: 12px;")
+        layout.addWidget(dot, 0, Qt.AlignmentFlag.AlignTop)
         label = QLabel(text)
         label.setObjectName("ToastText")
         label.setWordWrap(True)
@@ -730,19 +905,17 @@ class BasePage(QWidget):
         self.setObjectName("Page")
 
         outer = QVBoxLayout(self)
-        outer.setContentsMargins(26, 18, 26, 14)
-        outer.setSpacing(12)
+        outer.setContentsMargins(32, 20, 32, 16)
+        outer.setSpacing(16)
 
         header = QHBoxLayout()
-        header.setSpacing(12)
-        if self.icon_name:
-            icon_label = QLabel()
-            icon_label.setPixmap(theme_icon(self.icon_name, self.fallback_icon).pixmap(26, 26))
-            icon_label.setFixedWidth(30)
-            icon_label.setAlignment(Qt.AlignmentFlag.AlignTop)
-            header.addWidget(icon_label)
+        header.setSpacing(16)
         titles = QVBoxLayout()
-        titles.setSpacing(1)
+        titles.setSpacing(4)
+        self.eyebrow = QLabel("")
+        self.eyebrow.setObjectName("PageEyebrow")
+        self.eyebrow.setVisible(False)
+        titles.addWidget(self.eyebrow)
         title_label = QLabel(self.title)
         title_label.setObjectName("PageTitle")
         titles.addWidget(title_label)
@@ -753,7 +926,7 @@ class BasePage(QWidget):
             titles.addWidget(subtitle_label)
         header.addLayout(titles, 1)
         self.header_actions = QHBoxLayout()
-        self.header_actions.setSpacing(7)
+        self.header_actions.setSpacing(8)
         header.addLayout(self.header_actions)
         outer.addLayout(header)
         outer.addWidget(HLine())
@@ -765,10 +938,14 @@ class BasePage(QWidget):
         self.content = QWidget()
         self.content.setObjectName("PageContent")
         self.body = QVBoxLayout(self.content)
-        self.body.setContentsMargins(0, 2, 8, 22)
-        self.body.setSpacing(14)
+        self.body.setContentsMargins(0, 4, 10, 24)
+        self.body.setSpacing(20)
         self.scroll.setWidget(self.content)
         outer.addWidget(self.scroll, 1)
+
+    def set_page_index(self, index: int, total: int) -> None:
+        self.eyebrow.setText(f"{index:02d} / {total:02d}")
+        self.eyebrow.setVisible(True)
 
     # -- layout helpers -----------------------------------------------------
     def add(self, widget: QWidget, stretch: int = 0) -> QWidget:
@@ -778,9 +955,9 @@ class BasePage(QWidget):
     def add_section(self, text: str, action: QWidget | None = None) -> QLabel:
         row = QWidget()
         layout = QHBoxLayout(row)
-        layout.setContentsMargins(2, 6, 0, 0)
+        layout.setContentsMargins(0, 8, 0, 0)
         layout.setSpacing(8)
-        label = QLabel(text.upper())
+        label = QLabel(text)
         label.setObjectName("SectionTitle")
         layout.addWidget(label)
         layout.addStretch()
@@ -806,7 +983,7 @@ class BasePage(QWidget):
     def add_stretch(self) -> None:
         self.body.addStretch()
 
-    def add_flow(self, widgets: Iterable[QWidget], spacing: int = 12) -> FlowLayout:
+    def add_flow(self, widgets: Iterable[QWidget], spacing: int = 16) -> FlowLayout:
         holder = QWidget()
         flow = FlowLayout(holder, spacing=spacing)
         for widget in widgets:
@@ -824,8 +1001,6 @@ class BasePage(QWidget):
         tooltip: str = "",
     ) -> QPushButton:
         button = QPushButton(text)
-        if icon:
-            button.setIcon(theme_icon(icon))
         if style:
             button.setObjectName(style)
         if tooltip:

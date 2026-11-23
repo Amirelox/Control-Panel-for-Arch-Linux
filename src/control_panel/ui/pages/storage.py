@@ -96,7 +96,9 @@ class StoragePage(BasePage):
         self.scan_count.setObjectName("Hint")
         scan_row.addWidget(self.scan_count)
         large_card.add_layout(scan_row)
-        self.large_table = DataTable(["Size", "File"], stretch_column=1, min_height=240)
+        self.large_table = DataTable(["Size", "File"], stretch_column=1, min_height=140)
+        self.large_table.set_mono_columns(0, right=True)
+        self.large_table.fit_rows(empty_height=96)
         self.large_table.setSortingEnabled(True)
         self.large_table.itemDoubleClicked.connect(lambda _item, _col: self.open_selected())
         large_card.add(self.large_table)
@@ -113,9 +115,9 @@ class StoragePage(BasePage):
         clear_cache = QPushButton("Clear user cache")
         clear_cache.setObjectName("Danger")
         clear_cache.clicked.connect(self.clear_cache)
-        pacman_cache = QPushButton("Clean pacman cache…")
+        pacman_cache = QPushButton("Clean pacman cache")
         pacman_cache.clicked.connect(self.clean_pacman)
-        vacuum = QPushButton("Vacuum journal…")
+        vacuum = QPushButton("Vacuum journal")
         vacuum.clicked.connect(self.vacuum_journal)
         row.addWidget(clear_cache)
         row.addWidget(pacman_cache)
@@ -171,14 +173,14 @@ class StoragePage(BasePage):
             layout.setSpacing(4)
             head = QHBoxLayout()
             name = QLabel(
-                f"<b>{entry.mount}</b>  <span style='color:#a89fae'>{entry.device}</span>"
+                f"<span style='font-weight:500'>{entry.mount}</span>  <span style='color:#989ba4'>{entry.device}</span>"
             )
             name.setTextFormat(Qt.TextFormat.RichText)
             info = QLabel(
                 f"{format_bytes(entry.used)} / {format_bytes(entry.total)} · "
                 f"{format_bytes(entry.free)} free"
             )
-            info.setObjectName("Hint")
+            info.setObjectName("MonoHint")
             head.addWidget(name)
             head.addStretch()
             head.addWidget(info)
@@ -189,9 +191,9 @@ class StoragePage(BasePage):
             bar.setTextVisible(False)
             bar.setFixedHeight(9)
             if entry.percent >= 90:
-                bar.setStyleSheet("QProgressBar::chunk { background: #f38ba8; }")
+                bar.setStyleSheet("QProgressBar::chunk { background: #d97b7b; }")
             elif entry.percent >= 75:
-                bar.setStyleSheet("QProgressBar::chunk { background: #f9e2af; }")
+                bar.setStyleSheet("QProgressBar::chunk { background: #d6a45f; }")
             layout.addWidget(bar)
             self.fs_box.addWidget(row)
 
@@ -227,12 +229,14 @@ class StoragePage(BasePage):
             self.cancel_btn.setEnabled(False)
             self.large_table.setSortingEnabled(False)
             self.large_table.clear()
+            self.large_table.fit_rows(empty_height=96)
             for size, path in entries:
                 item = _SizeItem([format_bytes(size), str(path)])
                 item.setData(0, Qt.ItemDataRole.UserRole, size)
                 item.setData(1, Qt.ItemDataRole.UserRole, str(path))
                 self.large_table.addTopLevelItem(item)
             self.large_table.setSortingEnabled(True)
+            self.large_table.fit_rows(max_rows=10, empty_height=96)
             note = f"Scanned {scanned:,} files."
             if truncated:
                 note += " Result limit reached."

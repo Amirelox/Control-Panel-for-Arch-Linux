@@ -88,7 +88,7 @@ def test_settings_roundtrip_and_validation(tmp_path: Path) -> None:
     assert settings.refresh_ms == 500
     assert settings.last_page == 0
     assert settings.scan_limit == 10_000
-    assert settings.accent == "auto"
+    assert settings.accent == "amber"
     assert settings.hide_sensitive_env is True
 
     store = SettingsStore(path)

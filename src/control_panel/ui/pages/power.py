@@ -10,6 +10,7 @@ from PyQt6.QtWidgets import (
     QProgressBar,
     QPushButton,
     QStyle,
+    QWidget,
 )
 
 from ...core import power
@@ -58,7 +59,7 @@ class PowerPage(BasePage):
 
         # Battery --------------------------------------------------------
         self.add_section("Battery")
-        battery_card = Card("Charge")
+        battery_card = Card("Battery status")
         self.battery_bar = QProgressBar()
         self.battery_bar.setRange(0, 100)
         self.battery_bar.setValue(0)
@@ -77,8 +78,10 @@ class PowerPage(BasePage):
 
         # Power profile --------------------------------------------------
         self.add_section("Performance")
-        profile_card = Card("powerprofilesctl")
-        row = QHBoxLayout()
+        profile_card = Card("Power profiles")
+        self.profile_row = QWidget()
+        row = QHBoxLayout(self.profile_row)
+        row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(8)
         self.profile_combo = QComboBox()
         self.profile_combo.setMinimumWidth(180)
@@ -90,7 +93,7 @@ class PowerPage(BasePage):
         row.addWidget(self.profile_combo)
         row.addWidget(self.apply_profile_btn)
         row.addStretch()
-        profile_card.add_layout(row)
+        profile_card.add(self.profile_row)
         self.profile_hint = QLabel("Checking power profiles…")
         self.profile_hint.setObjectName("Hint")
         self.profile_hint.setWordWrap(True)
@@ -141,13 +144,13 @@ class PowerPage(BasePage):
             self.profile_combo.clear()
             self._profiles_loaded = True
             if not profiles:
-                self.profile_combo.setEnabled(False)
-                self.apply_profile_btn.setEnabled(False)
+                self.profile_row.setVisible(False)
                 self.profile_hint.setText(
                     "power-profiles-daemon is not installed. Install it to switch "
                     "between power-saver, balanced and performance."
                 )
                 return
+            self.profile_row.setVisible(True)
             self.profile_combo.addItems(profiles)
             if current in profiles:
                 self.profile_combo.setCurrentText(current)

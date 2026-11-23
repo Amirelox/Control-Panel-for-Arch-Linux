@@ -82,7 +82,7 @@ class ProcessesPage(BasePage):
 
         row = QHBoxLayout()
         row.setSpacing(8)
-        self.process_search = SearchField("Filter processes…")
+        self.process_search = SearchField("Filter processes")
         self.process_search.textChanged.connect(self._apply_process_filter)
         refresh = QPushButton("Refresh")
         refresh.setObjectName("Ghost")
@@ -97,6 +97,7 @@ class ProcessesPage(BasePage):
             min_height=280,
         )
         self.process_table.setSortingEnabled(True)
+        self.process_table.set_mono_columns(0, 3, 4, 5, right=True)
         self.process_table.sortByColumn(3, Qt.SortOrder.DescendingOrder)
         self.process_table.itemDoubleClicked.connect(
             lambda _item, _col: self.kill_process(force=False)
@@ -130,7 +131,7 @@ class ProcessesPage(BasePage):
         self.scope_combo = QComboBox()
         self.scope_combo.addItems(["System", "User"])
         self.scope_combo.currentIndexChanged.connect(lambda _index: self.refresh_services())
-        self.service_search = SearchField("Filter services…")
+        self.service_search = SearchField("Filter services")
         self.service_search.textChanged.connect(self._apply_service_filter)
         refresh = QPushButton("Refresh")
         refresh.setObjectName("Ghost")

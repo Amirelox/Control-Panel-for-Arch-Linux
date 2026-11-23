@@ -100,7 +100,7 @@ class DisplayPage(BasePage):
         self.rules_box = QVBoxLayout()
         self.rules_box.setSpacing(7)
         rules.add_layout(self.rules_box)
-        self.save_rules_btn = QPushButton("Save rules and reload Hyprland")
+        self.save_rules_btn = QPushButton("Save and reload")
         self.save_rules_btn.setObjectName("Primary")
         self.save_rules_btn.clicked.connect(self.save_rules)
         rules.add(self.save_rules_btn)
@@ -243,7 +243,7 @@ class DisplayPage(BasePage):
             self.save_rules_btn.setEnabled(False)
             return
         self.rules_hint.setText(
-            f"{len(entries)} rule(s). Each rule is edited in the file where it lives; "
+            f"{len(entries)} rules. Each rule is edited in the file where it lives; "
             "a .bak backup is written before saving."
         )
         self.save_rules_btn.setEnabled(True)

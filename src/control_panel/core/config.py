@@ -130,7 +130,7 @@ class Settings:
         ]
     )
     terminal: str = ""
-    accent: str = "auto"
+    accent: str = "amber"
     hide_sensitive_env: bool = True
     scan_limit: int = 250_000
 
@@ -176,8 +176,8 @@ class SettingsStore:
         settings.refresh_ms = max(500, min(settings.refresh_ms, 10_000))
         settings.scan_limit = max(10_000, min(settings.scan_limit, 5_000_000))
         settings.last_page = max(0, min(settings.last_page, 64))
-        if settings.accent not in {"auto", "violet", "green", "blue", "rose"}:
-            settings.accent = "auto"
+        if settings.accent not in {"auto", "amber", "violet", "green", "blue", "rose"}:
+            settings.accent = "amber"
         return settings
 
     def save(self, settings: Settings) -> None:

@@ -111,8 +111,9 @@ class AudioPage(BasePage):
         self.device_table = DataTable(
             ["Type", "ID", "Name", "State", "Default"],
             stretch_column=2,
-            min_height=170,
+            min_height=120,
         )
+        self.device_table.set_mono_columns(1, right=True)
         self.device_table.itemDoubleClicked.connect(lambda _item, _col: self.set_default_device())
         devices.add(self.device_table)
         device_row = QHBoxLayout()
@@ -267,6 +268,7 @@ class AudioPage(BasePage):
             self.device_table.addTopLevelItem(
                 QTreeWidgetItem(["—", "", "No devices reported", "", ""])
             )
+        self.device_table.fit_rows(max_rows=8)
 
     def set_default_device(self) -> None:
         item = self.device_table.currentItem()
@@ -299,7 +301,7 @@ class AudioPage(BasePage):
                 self.now_playing.setText("Nothing playing")
                 self.playback_state.setText("playerctl is not available or no player is active.")
                 return
-            self.now_playing.setText(f"♪  {track.text}")
+            self.now_playing.setText(f"Playing · {track.text}")
             self.playback_state.setText(track.status.capitalize() if track.status else "")
 
         def failed(_message: str, _trace: str) -> None:

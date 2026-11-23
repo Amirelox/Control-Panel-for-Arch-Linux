@@ -91,11 +91,12 @@ where each setting lives. After saving, `hyprctl reload` is followed by
 
 ## Theme
 
-`ui/theme.py` parses `~/.config/hypr/colors.conf` (Matugen output), accepts
-`rgb(...)`, `rgba(...)`, `#rrggbb`, `0x...` forms, derives surface/border/muted
-colours, and builds the QSS. Acrylic/transparency is intentionally not used:
-the app should look consistent under any compositor and be readable on a
-screenshot.
+`ui/theme.py` uses a fixed graphite neutral ramp and one signal accent. The
+default accent is amber; `auto` parses `~/.config/hypr/colors.conf` (Matugen
+output) and accepts `rgb(...)`, `rgba(...)`, `#rrggbb`, `0x...` forms. Surfaces
+never follow the wallpaper, so the chrome stays readable and calm. Acrylic and
+transparency are intentionally not used: the app should look consistent under
+any compositor and be readable on a screenshot.
 
 ## Failure handling
 

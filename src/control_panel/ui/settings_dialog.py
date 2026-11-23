@@ -47,6 +47,7 @@ class SettingsDialog(QDialog):
 
         self.accent_combo = QComboBox()
         for label, value in (
+            ("Amber (default)", "amber"),
             ("Follow Hyprland colours", "auto"),
             ("Violet", "violet"),
             ("Green", "green"),

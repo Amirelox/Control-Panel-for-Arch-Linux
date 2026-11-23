@@ -73,7 +73,7 @@ class EnvironmentPage(BasePage):
 
         row = QHBoxLayout()
         row.setSpacing(8)
-        self.env_search = SearchField("Filter variables…")
+        self.env_search = SearchField("Filter variables")
         self.env_search.textChanged.connect(self._filter_env)
         self.show_sensitive = QCheckBox("Show sensitive values")
         self.show_sensitive.setChecked(not self.settings.hide_sensitive_env)
@@ -83,6 +83,7 @@ class EnvironmentPage(BasePage):
         layout.addLayout(row)
 
         self.env_table = DataTable(["Variable", "Value"], stretch_column=1, min_height=300)
+        self.env_table.set_mono_columns(1, right=False)
         self.env_table.setSortingEnabled(True)
         layout.addWidget(self.env_table, 1)
         hint = QLabel("Values whose names look like secrets are masked by default.")

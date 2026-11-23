@@ -48,7 +48,7 @@ class SecurityPage(BasePage):
             tooltip="Re-read firewall, SSH and port information",
         )
 
-        self.add_section("Overview")
+        self.add_section("Checks")
         checks_card = Card("Security checklist")
         self.checks_box = QGridLayout()
         self.checks_box.setHorizontalSpacing(12)
@@ -82,7 +82,7 @@ class SecurityPage(BasePage):
         firewall_card.add_layout(row)
         self.firewall_output = QTextEdit()
         self.firewall_output.setReadOnly(True)
-        self.firewall_output.setMaximumHeight(130)
+        self.firewall_output.setMaximumHeight(100)
         self.firewall_output.setFont(QFont(self.mono_font, 10))
         firewall_card.add(self.firewall_output)
         self.add(firewall_card)
@@ -113,8 +113,9 @@ class SecurityPage(BasePage):
         ssh_row.addStretch()
         ssh_card.add_layout(ssh_row)
         self.keys_table = DataTable(
-            ["File", "Permissions", "Type"], stretch_column=0, min_height=120
+            ["File", "Permissions", "Type"], stretch_column=0, min_height=110
         )
+        self.keys_table.set_mono_columns(1, right=False)
         ssh_card.add(self.keys_table)
         self.keys_hint = QLabel("")
         self.keys_hint.setObjectName("Hint")
@@ -142,8 +143,9 @@ class SecurityPage(BasePage):
         self.ports_table = DataTable(
             ["Protocol", "Bind address", "Port", "Exposure", "Process"],
             stretch_column=4,
-            min_height=200,
+            min_height=150,
         )
+        self.ports_table.set_mono_columns(2, right=True)
         ports_card.add(self.ports_table)
         self.ports_hint = QLabel("")
         self.ports_hint.setObjectName("Hint")
@@ -195,6 +197,7 @@ class SecurityPage(BasePage):
         self.keys_table.clear_rows()
         for name, mode, kind in data["keys"]:
             self.keys_table.addTopLevelItem(QTreeWidgetItem([name, mode, kind]))
+        self.keys_table.fit_rows(max_rows=6)
         self.keys_hint.setText(
             f"{data['authorized']} authorized key(s) · ~/.ssh permissions {data['permissions']}"
         )
@@ -228,8 +231,9 @@ class SecurityPage(BasePage):
                     ]
                 )
             )
+        self.ports_table.fit_rows(max_rows=10)
         self.ports_hint.setText(
-            f"{len(self._ports)} listening socket(s) · {exposed} bound to a public address"
+            f"{len(self._ports)} listening sockets · {exposed} bound to a public address"
         )
 
     def _apply_checks(self, checks: list[tuple[str, str, str]]) -> None:
@@ -238,13 +242,13 @@ class SecurityPage(BasePage):
             widget = item.widget()
             if widget is not None:
                 widget.deleteLater()
-        colours = {"ok": "#a6e3a1", "warn": "#f9e2af", "info": "#89b4fa"}
+        colours = {"ok": "#83bd91", "warn": "#d6a45f", "info": "#8aa9c9"}
         for row, (label, level, detail) in enumerate(checks):
             colour = colours.get(level, colours["info"])
             dot = QLabel("●")
             dot.setStyleSheet(f"color: {colour}; font-size: 13px;")
             name = QLabel(label)
-            name.setStyleSheet("font-weight: 600;")
+            name.setStyleSheet("font-weight: 500;")
             detail_label = QLabel(detail)
             detail_label.setObjectName("Hint")
             detail_label.setWordWrap(True)

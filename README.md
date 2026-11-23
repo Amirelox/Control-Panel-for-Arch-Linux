@@ -130,7 +130,7 @@ Settings live in `~/.config/control-panel/settings.json`:
 - window geometry and last page,
 - sidebar preference,
 - refresh interval (0.5–5 s),
-- accent source (`auto` follows `~/.config/hypr/colors.conf`),
+- accent source (`amber` by default; `auto` follows `~/.config/hypr/colors.conf`),
 - terminal preference,
 - wallpaper folders,
 - confirmation for destructive actions,

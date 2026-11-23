@@ -105,7 +105,7 @@ class AppearancePage(BasePage):
         apply_btn.clicked.connect(self.apply_selected)
         random_btn = QPushButton("Random")
         random_btn.clicked.connect(self.apply_random)
-        browse_btn = QPushButton("Browse…")
+        browse_btn = QPushButton("Browse")
         browse_btn.clicked.connect(self.browse_wallpaper)
         folder_btn = QPushButton("Open folder")
         folder_btn.setObjectName("Ghost")
@@ -133,7 +133,7 @@ class AppearancePage(BasePage):
         info = QVBoxLayout()
         info.setSpacing(2)
         self.accent_name = QLabel("—")
-        self.accent_name.setStyleSheet("font-weight: 700; font-size: 15px;")
+        self.accent_name.setStyleSheet("font-weight: 500; font-size: 15px;")
         self.accent_path = QLabel(str(hypr_colors_conf()))
         self.accent_path.setObjectName("Hint")
         info.addWidget(self.accent_name)
@@ -268,7 +268,7 @@ class AppearancePage(BasePage):
                 if index < 100:
                     self._load_thumbnail(path)
             self.backend_hint.setText(
-                f"Backend: {wallpaper.wallpaper_backend()} · {len(paths)} wallpaper(s)"
+                f"Backend: {wallpaper.wallpaper_backend()} · {len(paths)} wallpapers"
             )
 
         self.call(scan, done)

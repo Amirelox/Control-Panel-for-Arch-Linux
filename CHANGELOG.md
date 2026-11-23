@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Interface pass: graphite neutrals with an amber signal accent, mono figures,
+  sentence-case labels, text-only navigation with page numbers, calmer primary
+  buttons and denser tables.
+- Overview rebuilt around four stat cards, a CPU/memory chart and a compact
+  system column; responsive stacking on narrow windows.
+- Tables size to their content; numeric columns use tabular mono figures.
+
 ## 2.0.0 — 2026-11-23
 
 Complete rewrite of the original single-file prototype.

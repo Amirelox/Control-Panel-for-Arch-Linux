@@ -51,7 +51,7 @@ class BluetoothPage(BasePage):
         grid = QGridLayout()
         grid.setHorizontalSpacing(18)
         grid.setVerticalSpacing(6)
-        self.adapter_name = self._row(grid, 0, "Adapter")
+        self.adapter_name = self._row(grid, 0, "Name")
         self.adapter_power = self._row(grid, 1, "Power")
         self.adapter_address = self._row(grid, 2, "Address")
         self.adapter_discovery = self._row(grid, 3, "Discovery")
@@ -78,8 +78,9 @@ class BluetoothPage(BasePage):
         self.device_table = DataTable(
             ["Device", "Address", "Paired", "Connected", "Trusted"],
             stretch_column=0,
-            min_height=230,
+            min_height=120,
         )
+        self.device_table.set_mono_columns(1, right=False)
         devices_card.add(self.device_table)
 
         scan_row = QHBoxLayout()

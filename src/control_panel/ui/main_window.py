@@ -147,7 +147,7 @@ class MainWindow(QMainWindow):
         root_layout.setContentsMargins(0, 0, 0, 0)
         root_layout.setSpacing(0)
 
-        items = [NavItem(spec.title, spec.icon, spec.fallback) for spec in PAGE_SPECS]
+        items = [NavItem(spec.title) for spec in PAGE_SPECS]
         self.sidebar = Sidebar(items)
         self.sidebar.page_selected.connect(self.switch_page)
         self.sidebar.collapsed_changed.connect(self._on_sidebar_collapsed)
@@ -205,6 +205,7 @@ class MainWindow(QMainWindow):
         self.footer_net = QLabel("NET —")
         desktop = "Hyprland" if is_hyprland() else os.environ.get("XDG_CURRENT_DESKTOP", "Linux")
         self.footer_compositor = QLabel(desktop or "Linux")
+        self.footer_compositor.setToolTip("Desktop session")
         self.footer_clock = QLabel("")
         for label in (self.footer_cpu, self.footer_mem, self.footer_net):
             label.setObjectName("FooterLabel")
@@ -270,6 +271,9 @@ class MainWindow(QMainWindow):
             self.panel_errors += 1
             panel = self._error_page(spec.title, index)
             self.notify(f"Could not load {spec.title}. See the terminal for details.", "error")
+        set_index = getattr(panel, "set_page_index", None)
+        if callable(set_index):
+            set_index(index + 1, len(PAGE_SPECS))
         self._panels[index] = panel
         self.stack.insertWidget(index, panel)
         if old is not None:
@@ -282,7 +286,7 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(page)
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         heading = QLabel(f"{title} could not be loaded")
-        heading.setStyleSheet("font-size: 17px; font-weight: 700;")
+        heading.setStyleSheet("font-size: 17px; font-weight: 500;")
         detail = QLabel("Open the application from a terminal to see the error, then retry.")
         detail.setObjectName("Muted")
         retry = QPushButton("Retry")

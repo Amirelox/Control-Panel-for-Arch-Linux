@@ -120,8 +120,8 @@ control-panel --version
 ## Konfiguracja
 
 Ustawienia są w `~/.config/control-panel/settings.json`: geometria okna,
-ostatnia strona, sidebar, interwał odświeżania, źródło akcentu (`auto` czyta
-`~/.config/hypr/colors.conf`), terminal, foldery tapet, potwierdzenia akcji
+ostatnia strona, sidebar, interwał odświeżania, źródło akcentu (domyślnie
+`amber`; `auto` czyta `~/.config/hypr/colors.conf`), terminal, foldery tapet, potwierdzenia akcji
 niszczących i limit skanowania.
 
 Poza tym plikiem aplikacja nic nie zapisuje, dopóki sam nie edytujesz pliku

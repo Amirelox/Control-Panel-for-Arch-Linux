@@ -1,4 +1,9 @@
-"""Colours, fonts and the application stylesheet."""
+"""Colours, fonts and the application stylesheet.
+
+The chrome is deliberately quiet: a graphite ramp, one amber signal colour and
+a monospace face for figures. Matugen can still supply the accent when the user
+chooses "auto"; surfaces never follow the wallpaper.
+"""
 
 from __future__ import annotations
 
@@ -14,42 +19,47 @@ from ..core.fs import read_text
 __all__ = ["Palette", "apply_theme", "build_stylesheet", "load_palette", "pick_fonts"]
 
 _ACCENTS = {
-    "violet": ("#d9b8ff", "#b79be0"),
-    "green": ("#cbe69a", "#9fbf72"),
-    "blue": ("#9cc7ff", "#78a6e0"),
-    "rose": ("#ffb8c8", "#e39aab"),
+    "amber": ("#d6a45f", "#b8894e"),
+    "violet": ("#b9a7d8", "#9b88bd"),
+    "green": ("#9fc48a", "#82a86c"),
+    "blue": ("#8fb6d9", "#6f97bc"),
+    "rose": ("#d8a0aa", "#b9828c"),
 }
 
 
 @dataclass(frozen=True, slots=True)
 class Palette:
-    bg: str = "#0f0d12"
-    surface: str = "#171419"
-    surface_alt: str = "#1f1b23"
-    raised: str = "#27222d"
-    border: str = "#302a38"
-    text: str = "#ece7ef"
-    muted: str = "#a89fae"
-    accent: str = "#d9b8ff"
-    accent_2: str = "#b79be0"
-    accent_fg: str = "#1a1024"
-    success: str = "#a6e3a1"
-    warning: str = "#f9e2af"
-    danger: str = "#f38ba8"
-    info: str = "#89b4fa"
-    shadow: str = "#00000066"
+    bg: str = "#0f1013"
+    surface: str = "#16171b"
+    surface_alt: str = "#1d1e23"
+    raised: str = "#25262c"
+    border: str = "#2c2d33"
+    text: str = "#e9eaee"
+    muted: str = "#989ba4"
+    accent: str = "#d6a45f"
+    accent_2: str = "#b8894e"
+    accent_fg: str = "#17130c"
+    success: str = "#83bd91"
+    warning: str = "#d6a45f"
+    danger: str = "#d97b7b"
+    info: str = "#8aa9c9"
+    shadow: str = "#00000080"
+
+    @property
+    def sidebar(self) -> str:
+        return _mix(self.bg, "#000000", 0.28)
 
     @property
     def accent_soft(self) -> str:
-        return _mix(self.surface, self.accent, 0.16)
+        return _mix(self.surface, self.accent, 0.14)
 
     @property
     def success_soft(self) -> str:
-        return _mix(self.surface, self.success, 0.14)
+        return _mix(self.surface, self.success, 0.12)
 
     @property
     def danger_soft(self) -> str:
-        return _mix(self.surface, self.danger, 0.14)
+        return _mix(self.surface, self.danger, 0.12)
 
 
 def _normalise_hex(value: str) -> str | None:
@@ -62,13 +72,11 @@ def _normalise_hex(value: str) -> str | None:
     if lowered.startswith("0x"):
         digits = lowered[2:]
         if len(digits) in {6, 8}:
-            # 0xAARRGGBB -> keep RGB
             return "#" + (digits[-6:] if len(digits) == 8 else digits)
         return None
     if lowered.startswith("#"):
         digits = lowered[1:]
         if len(digits) in {6, 8}:
-            # CSS #RRGGBBAA -> keep RGB
             return "#" + digits[:6]
     return None
 
@@ -101,51 +109,28 @@ def _parse_hypr_colors() -> dict[str, str]:
     return values
 
 
-def load_palette(accent_mode: str = "auto") -> Palette:
+def load_palette(accent_mode: str = "amber") -> Palette:
     hypr = _parse_hypr_colors()
     base = Palette()
     if accent_mode == "auto":
         accent = hypr.get("accent", base.accent)
         accent_2 = hypr.get("accent2", base.accent_2)
     else:
-        accent, accent_2 = _ACCENTS.get(accent_mode, _ACCENTS["violet"])
-
-    bg = hypr.get("bg", base.bg)
-    # Matugen's background can be very close to black; keep a little depth.
-    if _is_light(bg):
-        bg = base.bg
-    surface = _mix(bg, "#ffffff", 0.055)
-    surface_alt = _mix(bg, "#ffffff", 0.10)
-    raised = _mix(bg, "#ffffff", 0.15)
-    border = _mix(bg, "#ffffff", 0.18)
-    text = hypr.get("fg", base.text)
-    if not _is_light(text):
-        text = base.text
-    muted = _mix(text, bg, 0.38)
+        accent, accent_2 = _ACCENTS.get(accent_mode, _ACCENTS["amber"])
 
     return Palette(
-        bg=bg,
-        surface=surface,
-        surface_alt=surface_alt,
-        raised=raised,
-        border=border,
-        text=text,
-        muted=muted,
         accent=accent,
         accent_2=accent_2,
-        accent_fg="#151016" if _is_light(accent) else "#ffffff",
-        success=hypr.get("success", base.success),
-        danger=hypr.get("error", base.danger),
-        shadow="#00000080",
+        accent_fg="#17130c" if _is_light(accent) else "#ffffff",
     )
 
 
 def pick_fonts() -> tuple[str, str]:
     families = set(QFontDatabase.families())
     ui_candidates = (
-        "Inter",
         "Adwaita Sans",
         "Cantarell",
+        "Inter",
         "Noto Sans",
         "Liberation Sans",
         "DejaVu Sans",
@@ -166,7 +151,7 @@ def pick_fonts() -> tuple[str, str]:
 
 def build_stylesheet(palette: Palette, ui_font: str, mono_font: str) -> str:
     p = palette
-    scroll_handle = _mix(p.border, p.accent, 0.25)
+    scroll_handle = _mix(p.border, p.text, 0.22)
     selection = p.accent_soft
     return f"""
     * {{
@@ -184,171 +169,199 @@ def build_stylesheet(palette: Palette, ui_font: str, mono_font: str) -> str:
         color: {p.text};
         border: 1px solid {p.border};
         border-radius: 6px;
-        padding: 5px 8px;
+        padding: 6px 8px;
     }}
+
+    /* Shell */
     QWidget#Sidebar {{
-        background: {p.surface};
+        background: {p.sidebar};
         border-right: 1px solid {p.border};
     }}
     QLabel#Logo {{
-        color: {p.accent};
-        font-size: 17px;
-        font-weight: 700;
-        letter-spacing: 0.4px;
+        color: {p.text};
+        font-size: 18px;
+        font-weight: 600;
     }}
     QLabel#LogoCompact {{
-        color: {p.accent};
-        font-size: 16px;
-        font-weight: 800;
+        color: {p.text};
+        font-size: 15px;
+        font-weight: 600;
     }}
     QLabel#AppSubtitle {{
         color: {p.muted};
+        font-size: 12px;
+    }}
+    QPushButton#NavButton {{
+        background: transparent;
+        border: none;
+        border-left: 2px solid transparent;
+        border-radius: 8px;
+        padding: 0 12px;
+        min-height: 36px;
+        color: {p.muted};
+        text-align: left;
+        font-size: 14px;
+        font-weight: 400;
+    }}
+    QPushButton#NavButton:hover {{ background: {p.surface_alt}; color: {p.text}; }}
+    QPushButton#NavButton:checked {{
+        background: {p.surface_alt};
+        border-left-color: {p.accent};
+        color: {p.text};
+        font-weight: 500;
+    }}
+
+    /* Page header */
+    QLabel#PageEyebrow {{
+        color: {p.muted};
+        font-family: "{mono_font}";
         font-size: 11px;
     }}
     QLabel#PageTitle {{
-        font-size: 25px;
-        font-weight: 700;
         color: {p.text};
+        font-size: 30px;
+        font-weight: 500;
     }}
     QLabel#PageSubtitle {{
         color: {p.muted};
-        font-size: 12px;
+        font-size: 13px;
     }}
     QLabel#SectionTitle {{
-        color: {p.accent};
-        font-size: 12px;
-        font-weight: 700;
-        letter-spacing: 0.5px;
+        color: {p.muted};
+        font-size: 13px;
+        font-weight: 500;
     }}
     QLabel#Muted {{ color: {p.muted}; }}
-    QLabel#StatValue {{
-        color: {p.text};
-        font-size: 24px;
-        font-weight: 700;
-    }}
-    QLabel#StatTitle {{
+    QLabel#Hint {{ color: {p.muted}; font-size: 12px; }}
+    QLabel#MonoHint {{
         color: {p.muted};
-        font-size: 10px;
-        font-weight: 700;
-        letter-spacing: 0.5px;
+        font-family: "{mono_font}";
+        font-size: 11px;
     }}
-    QLabel#Hint {{ color: {p.muted}; font-size: 11px; }}
+    QLabel#CardTitle {{ color: {p.muted}; font-size: 12px; font-weight: 500; }}
     QLabel#Danger {{ color: {p.danger}; }}
     QLabel#Success {{ color: {p.success}; }}
     QLabel#Accent {{ color: {p.accent}; }}
+
+    /* Cards and figures */
     QFrame#Card, QFrame#StatCard {{
         background: {p.surface};
         border: 1px solid {p.border};
-        border-radius: 13px;
+        border-radius: 14px;
     }}
     QFrame#Card QLabel, QFrame#StatCard QLabel {{ background: transparent; }}
-    QFrame#Card:hover, QFrame#StatCard:hover {{ border-color: {_mix(p.border, p.accent, 0.35)}; }}
     QFrame#Divider {{ background: {p.border}; max-height: 1px; border: none; }}
+    QLabel#StatValue {{
+        color: {p.text};
+        font-family: "{mono_font}";
+        font-size: 28px;
+        font-weight: 500;
+    }}
+    QLabel#StatTitle {{
+        color: {p.muted};
+        font-size: 12px;
+        font-weight: 400;
+    }}
     QFrame#Pill {{
         background: {p.surface_alt};
         border: 1px solid {p.border};
-        border-radius: 10px;
+        border-radius: 8px;
     }}
     QGroupBox {{
         background: {p.surface};
         border: 1px solid {p.border};
-        border-radius: 12px;
-        margin-top: 14px;
-        padding: 16px 12px 12px 12px;
-        font-weight: 600;
+        border-radius: 14px;
+        margin-top: 16px;
+        padding: 20px 16px 16px 16px;
+        font-weight: 500;
     }}
     QGroupBox::title {{
         subcontrol-origin: margin;
         subcontrol-position: top left;
-        left: 12px;
+        left: 14px;
         top: 2px;
-        padding: 0 5px;
+        padding: 0 6px;
         color: {p.muted};
-        background: {p.bg};
-        font-size: 11px;
-        font-weight: 700;
+        background: {p.surface};
+        font-size: 12px;
     }}
+
+    /* Controls */
     QPushButton {{
         background: {p.surface_alt};
         color: {p.text};
         border: 1px solid {p.border};
-        border-radius: 9px;
-        padding: 7px 14px;
-        min-height: 20px;
+        border-radius: 8px;
+        padding: 8px 16px;
+        min-height: 22px;
+        font-weight: 500;
     }}
-    QPushButton:hover {{
-        background: {p.raised};
-        border-color: {_mix(p.border, p.accent, 0.35)};
-    }}
-    QPushButton:pressed {{ background: {_mix(p.raised, "#000000", 0.15)}; }}
+    QPushButton:hover {{ background: {p.raised}; border-color: {_mix(p.border, p.text, 0.18)}; }}
+    QPushButton:pressed {{ background: {_mix(p.raised, "#000000", 0.16)}; }}
     QPushButton:disabled {{
         background: {p.surface};
         color: {_mix(p.muted, p.surface, 0.45)};
         border-color: {p.border};
     }}
-    QPushButton:focus {{ border-color: {p.accent}; }}
+    QPushButton:focus {{ border-color: {_mix(p.accent, p.border, 0.45)}; }}
     QPushButton#Primary {{
-        background: {p.accent};
-        color: {p.accent_fg};
-        border: 1px solid transparent;
-        font-weight: 700;
-    }}
-    QPushButton#Primary:hover {{ background: {p.accent_2}; }}
-    QPushButton#Primary:pressed {{ background: {_mix(p.accent_2, "#000000", 0.15)}; }}
-    QPushButton#Primary:disabled {{
-        background: {_mix(p.surface_alt, p.accent, 0.20)};
-        color: {_mix(p.muted, p.accent_fg, 0.35)};
-    }}
-    QPushButton#Danger {{ background: {p.danger_soft}; color: {p.danger}; border-color: {_mix(p.danger, p.border, 0.35)}; }}
-    QPushButton#Danger:hover {{ background: {_mix(p.surface, p.danger, 0.26)}; }}
-    QPushButton#Success {{ background: {p.success_soft}; color: {p.success}; border-color: {_mix(p.success, p.border, 0.35)}; }}
-    QPushButton#Success:hover {{ background: {_mix(p.surface, p.success, 0.26)}; }}
-    QPushButton#Ghost {{ background: transparent; border-color: transparent; color: {p.muted}; }}
-    QPushButton#Ghost:hover {{ background: {p.surface_alt}; color: {p.text}; }}
-    QPushButton#NavButton {{
-        background: transparent;
-        border: none;
-        border-radius: 10px;
-        padding: 9px 12px;
-        color: {p.muted};
-        text-align: left;
+        background: {p.text};
+        color: {p.bg};
+        border: 1px solid {p.text};
         font-weight: 500;
     }}
-    QPushButton#NavButton:hover {{ background: {p.surface_alt}; color: {p.text}; }}
-    QPushButton#NavButton:checked {{
-        background: {p.accent_soft};
-        color: {p.accent};
-        font-weight: 700;
+    QPushButton#Primary:hover {{ background: #ffffff; border-color: #ffffff; }}
+    QPushButton#Primary:pressed {{ background: {_mix(p.text, "#000000", 0.12)}; }}
+    QPushButton#Primary:disabled {{
+        background: {_mix(p.surface_alt, p.text, 0.18)};
+        color: {_mix(p.muted, p.bg, 0.35)};
+        border-color: transparent;
     }}
-    QPushButton#NavButton:checked:hover {{ background: {p.accent_soft}; }}
+    QPushButton#Danger {{
+        background: {p.danger_soft};
+        color: {p.danger};
+        border-color: {_mix(p.danger, p.border, 0.30)};
+    }}
+    QPushButton#Danger:hover {{ background: {_mix(p.surface, p.danger, 0.22)}; }}
+    QPushButton#Success {{
+        background: {p.success_soft};
+        color: {p.success};
+        border-color: {_mix(p.success, p.border, 0.30)};
+    }}
+    QPushButton#Success:hover {{ background: {_mix(p.surface, p.success, 0.22)}; }}
+    QPushButton#Ghost {{ background: transparent; border-color: transparent; color: {p.muted}; }}
+    QPushButton#Ghost:hover {{ background: {p.surface_alt}; color: {p.text}; }}
+
     QScrollArea, QScrollArea > QWidget > QWidget {{ background: transparent; border: none; }}
-    QScrollBar:vertical {{ background: transparent; width: 8px; margin: 2px; }}
+    QScrollBar:vertical {{ background: transparent; width: 10px; margin: 2px; }}
     QScrollBar::handle:vertical {{
         background: {scroll_handle};
-        border-radius: 4px;
-        min-height: 28px;
+        border-radius: 5px;
+        min-height: 32px;
     }}
-    QScrollBar::handle:vertical:hover {{ background: {p.accent_2}; }}
+    QScrollBar::handle:vertical:hover {{ background: {_mix(scroll_handle, p.text, 0.25)}; }}
     QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{ height: 0; }}
-    QScrollBar:horizontal {{ background: transparent; height: 8px; margin: 2px; }}
-    QScrollBar::handle:horizontal {{ background: {scroll_handle}; border-radius: 4px; min-width: 28px; }}
+    QScrollBar:horizontal {{ background: transparent; height: 10px; margin: 2px; }}
+    QScrollBar::handle:horizontal {{ background: {scroll_handle}; border-radius: 5px; min-width: 32px; }}
     QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{ width: 0; }}
+
     QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, QDoubleSpinBox, QComboBox {{
         background: {p.surface_alt};
         color: {p.text};
         border: 1px solid {p.border};
         border-radius: 8px;
-        padding: 6px 9px;
+        padding: 8px 12px;
+        min-height: 20px;
         selection-background-color: {p.accent};
         selection-color: {p.accent_fg};
     }}
     QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus, QSpinBox:focus,
     QDoubleSpinBox:focus, QComboBox:focus, QComboBox:on {{
-        border-color: {_mix(p.accent, p.border, 0.35)};
+        border-color: {_mix(p.accent, p.border, 0.45)};
     }}
     QLineEdit:disabled, QTextEdit:disabled, QPlainTextEdit:disabled,
     QSpinBox:disabled, QComboBox:disabled {{ color: {p.muted}; background: {p.surface}; }}
-    QComboBox::drop-down {{ border: none; width: 22px; }}
+    QComboBox::drop-down {{ border: none; width: 24px; }}
     QComboBox QAbstractItemView {{
         background: {p.surface_alt};
         color: {p.text};
@@ -360,52 +373,54 @@ def build_stylesheet(palette: Palette, ui_font: str, mono_font: str) -> str:
     }}
     QSpinBox::up-button, QSpinBox::down-button,
     QDoubleSpinBox::up-button, QDoubleSpinBox::down-button {{ width: 16px; background: transparent; }}
-    QSlider::groove:horizontal {{ height: 5px; background: {p.surface_alt}; border-radius: 3px; }}
-    QSlider::sub-page:horizontal {{ background: {p.accent}; border-radius: 3px; }}
-    QSlider::add-page:horizontal {{ background: {p.surface_alt}; border-radius: 3px; }}
+
+    QSlider::groove:horizontal {{ height: 4px; background: {p.surface_alt}; border-radius: 2px; }}
+    QSlider::sub-page:horizontal {{ background: {p.accent}; border-radius: 2px; }}
+    QSlider::add-page:horizontal {{ background: {p.surface_alt}; border-radius: 2px; }}
     QSlider::handle:horizontal {{
-        background: {p.accent};
-        width: 15px;
-        height: 15px;
+        background: {p.text};
+        width: 14px;
+        height: 14px;
         margin: -6px 0;
-        border-radius: 8px;
+        border-radius: 7px;
         border: 2px solid {p.bg};
     }}
-    QSlider::handle:horizontal:hover {{ background: {p.accent_2}; }}
+    QSlider::handle:horizontal:hover {{ background: #ffffff; }}
+
     QProgressBar {{
         background: {p.surface_alt};
         border: none;
-        border-radius: 5px;
-        min-height: 8px;
-        max-height: 10px;
+        border-radius: 3px;
+        min-height: 6px;
+        max-height: 6px;
         text-align: center;
         color: transparent;
     }}
-    QProgressBar::chunk {{ background: {p.accent}; border-radius: 5px; }}
+    QProgressBar::chunk {{ background: {p.text}; border-radius: 3px; }}
+
     QCheckBox, QRadioButton {{ spacing: 8px; color: {p.text}; }}
     QCheckBox::indicator, QRadioButton::indicator {{
-        width: 17px;
-        height: 17px;
-        border-radius: 5px;
+        width: 16px;
+        height: 16px;
+        border-radius: 4px;
         border: 1px solid {p.border};
         background: {p.surface_alt};
     }}
-    QCheckBox::indicator:checked {{
-        background: {p.accent};
-        border-color: {p.accent};
-    }}
+    QCheckBox::indicator:checked {{ background: {p.accent}; border-color: {p.accent}; }}
     QCheckBox::indicator:disabled {{ background: {p.surface}; }}
+
+    /* Data */
     QTreeWidget, QListWidget, QTableWidget {{
         background: {p.surface};
-        alternate-background-color: {_mix(p.surface, p.bg, 0.35)};
+        alternate-background-color: {_mix(p.surface, p.bg, 0.28)};
         border: 1px solid {p.border};
-        border-radius: 9px;
+        border-radius: 8px;
         color: {p.text};
         gridline-color: {p.border};
         selection-background-color: {selection};
         selection-color: {p.text};
     }}
-    QTreeWidget::item, QListWidget::item {{ padding: 4px 2px; border: none; }}
+    QTreeWidget::item, QListWidget::item {{ padding: 6px 8px; border: none; }}
     QTreeWidget::item:hover, QListWidget::item:hover {{ background: {p.surface_alt}; }}
     QTreeWidget::item:selected, QListWidget::item:selected {{
         background: {selection};
@@ -413,16 +428,17 @@ def build_stylesheet(palette: Palette, ui_font: str, mono_font: str) -> str:
     }}
     QListWidget::item:selected:!active, QTreeWidget::item:selected:!active {{ background: {selection}; }}
     QHeaderView::section {{
-        background: {p.surface_alt};
+        background: {p.surface};
         color: {p.muted};
-        padding: 7px 8px;
+        padding: 8px;
         border: none;
         border-bottom: 1px solid {p.border};
-        font-size: 11px;
-        font-weight: 700;
+        font-size: 12px;
+        font-weight: 500;
     }}
-    QTableCornerButton::section {{ background: {p.surface_alt}; border: none; }}
-    QTabWidget::pane {{ border: 1px solid {p.border}; border-radius: 10px; background: {p.surface}; top: -1px; }}
+    QTableCornerButton::section {{ background: {p.surface}; border: none; }}
+
+    QTabWidget::pane {{ border: 1px solid {p.border}; border-radius: 12px; background: {p.surface}; top: -1px; }}
     QTabBar::tab {{
         background: transparent;
         color: {p.muted};
@@ -430,9 +446,11 @@ def build_stylesheet(palette: Palette, ui_font: str, mono_font: str) -> str:
         margin-right: 2px;
         border: none;
         border-bottom: 2px solid transparent;
+        font-weight: 400;
     }}
     QTabBar::tab:hover {{ color: {p.text}; }}
-    QTabBar::tab:selected {{ color: {p.accent}; border-bottom-color: {p.accent}; font-weight: 600; }}
+    QTabBar::tab:selected {{ color: {p.text}; border-bottom-color: {p.accent}; font-weight: 500; }}
+
     QMenu {{
         background: {p.surface_alt};
         color: {p.text};
@@ -440,22 +458,28 @@ def build_stylesheet(palette: Palette, ui_font: str, mono_font: str) -> str:
         border-radius: 8px;
         padding: 5px;
     }}
-    QMenu::item {{ padding: 6px 20px 6px 12px; border-radius: 5px; }}
+    QMenu::item {{ padding: 8px 20px 8px 12px; border-radius: 5px; }}
     QMenu::item:selected {{ background: {selection}; }}
     QMenu::separator {{ height: 1px; background: {p.border}; margin: 4px 8px; }}
-    QStatusBar {{ background: {p.surface}; color: {p.muted}; border-top: 1px solid {p.border}; }}
-    QStatusBar::item {{ border: none; }}
-    QWidget#Footer {{ background: {p.surface}; border-top: 1px solid {p.border}; }}
-    QLabel#FooterLabel {{ color: {p.muted}; font-size: 11px; }}
-    QLabel#FooterAccent {{ color: {p.accent}; font-size: 11px; font-weight: 600; }}
-    QSplitter::handle {{ background: {p.border}; }}
+
+    QWidget#Footer {{ background: {p.sidebar}; border-top: 1px solid {p.border}; }}
+    QLabel#FooterLabel {{
+        color: {p.muted};
+        font-family: "{mono_font}";
+        font-size: 11px;
+    }}
+    QLabel#FooterAccent {{
+        color: {p.text};
+        font-family: "{mono_font}";
+        font-size: 11px;
+    }}
+
     QFrame#Toast {{
         background: {p.raised};
         border: 1px solid {p.border};
         border-radius: 10px;
     }}
-    QLabel#ToastText {{ color: {p.text}; font-weight: 500; }}
-    QScrollArea#CodeScroll {{ background: {p.surface}; border: 1px solid {p.border}; border-radius: 9px; }}
+    QLabel#ToastText {{ color: {p.text}; font-weight: 400; }}
     QPlainTextEdit#CodeEditor {{
         background: {p.bg};
         color: {p.text};
@@ -465,16 +489,12 @@ def build_stylesheet(palette: Palette, ui_font: str, mono_font: str) -> str:
         border-radius: 0;
         padding: 8px;
     }}
-    QDialogButtonBox QPushButton {{ min-width: 80px; }}
+    QDialogButtonBox QPushButton {{ min-width: 88px; }}
     """
 
 
 def apply_theme(app: QApplication, palette: Palette) -> tuple[str, str]:
-    """Install the palette, font and stylesheet on *app*.
-
-    Returns the selected ``(ui_font, mono_font)`` families so pages can reuse
-    them for code editors and previews.
-    """
+    """Install the palette, font and stylesheet on *app*."""
     ui_font, mono_font = pick_fonts()
 
     qt_palette = QPalette()

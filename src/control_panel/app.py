@@ -181,7 +181,8 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Screenshot saved to {target}")
             app.quit()
 
-        QTimer.singleShot(2600, capture)
+        delay_ms = int(os.environ.get("ACC_SCREENSHOT_DELAY_MS", "9000"))
+        QTimer.singleShot(max(250, delay_ms), capture)
     elif args.self_test:
         pages = list(range(len(PAGE_SPECS)))
         delay = 120

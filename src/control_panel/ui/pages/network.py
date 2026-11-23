@@ -83,8 +83,9 @@ class NetworkPage(BasePage):
         self.iface_table = DataTable(
             ["Interface", "State", "IPv4", "IPv6", "MAC", "Speed"],
             stretch_column=2,
-            min_height=150,
+            min_height=120,
         )
+        self.iface_table.set_mono_columns(2, 3, 4, right=False)
         iface_card.add(self.iface_table)
         row = QHBoxLayout()
         self.iface_refresh = QPushButton("Refresh interfaces")
@@ -111,7 +112,8 @@ class NetworkPage(BasePage):
         traffic_grid.addWidget(self.up_value, 1, 1)
         traffic.add_layout(traffic_grid)
         self.net_spark = Sparkline(samples=80)
-        self.net_spark.set_colour(palette.info)
+        self.net_spark.set_colour(palette.accent)
+        self.net_spark.set_border(palette.border)
         traffic.add(self.net_spark)
         self.total_traffic = QLabel("")
         self.total_traffic.setObjectName("Hint")
@@ -191,11 +193,12 @@ class NetworkPage(BasePage):
 
     def set_palette(self, palette: Palette) -> None:
         self.palette = palette
-        self.net_spark.set_colour(palette.info)
+        self.net_spark.set_colour(palette.accent)
+        self.net_spark.set_border(palette.border)
 
     @staticmethod
     def _caption(text: str) -> QLabel:
-        label = QLabel(text.upper())
+        label = QLabel(text)
         label.setObjectName("StatTitle")
         return label
 
@@ -283,6 +286,7 @@ class NetworkPage(BasePage):
                 )
             )
 
+        self.iface_table.fit_rows(max_rows=8)
         _servers, details = data["dns"]
         self.dns_label.setText(details or "No resolver information available.")
 
@@ -304,10 +308,9 @@ class NetworkPage(BasePage):
                 return
             for network_entry in networks:
                 bars = self._signal_bars(network_entry.signal)
-                lock = "" if network_entry.is_open else "  🔒"
                 prefix = "● " if network_entry.in_use else "  "
                 item = QListWidgetItem(
-                    f"{prefix}{bars}  {network_entry.ssid}{lock}   "
+                    f"{prefix}{bars}  {network_entry.ssid}   "
                     f"{network_entry.signal}%  {network_entry.display_security}"
                 )
                 item.setData(Qt.ItemDataRole.UserRole, network_entry.ssid)

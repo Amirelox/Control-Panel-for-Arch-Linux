@@ -53,7 +53,7 @@ class PackagesPage(BasePage):
         search_card = Card()
         row = QHBoxLayout()
         row.setSpacing(8)
-        self.search_field = SearchField("Search packages…")
+        self.search_field = SearchField("Search packages")
         self.search_field.returnPressed.connect(self.run_search)
         self.source_combo = QComboBox()
         self.source_combo.addItems(["Official + AUR", "Official", "AUR"])
@@ -65,7 +65,7 @@ class PackagesPage(BasePage):
         row.addWidget(self.source_combo)
         row.addWidget(search_btn)
         search_card.add_layout(row)
-        self.search_hint = QLabel("")
+        self.search_hint = QLabel("Search official repositories or AUR.")
         self.search_hint.setObjectName("Hint")
         search_card.add(self.search_hint)
         self.add(search_card)
@@ -75,8 +75,10 @@ class PackagesPage(BasePage):
         self.table = DataTable(
             ["Package", "Version", "Source", "Installed", "Description"],
             stretch_column=4,
-            min_height=260,
+            min_height=160,
         )
+        self.table.set_mono_columns(1, right=False)
+        self.table.fit_rows(empty_height=96)
         self.table.itemSelectionChanged.connect(self._selection_changed)
         results_card.add(self.table)
         buttons = QHBoxLayout()
@@ -103,7 +105,7 @@ class PackagesPage(BasePage):
         update_card.add(self.update_summary)
         self.update_list = QPlainTextEdit()
         self.update_list.setReadOnly(True)
-        self.update_list.setMaximumHeight(150)
+        self.update_list.setMaximumHeight(110)
         self.update_list.setPlaceholderText("No updates pending.")
         self.update_list.setFont(QFont(self.mono_font, 10))
         update_card.add(self.update_list)
@@ -111,7 +113,7 @@ class PackagesPage(BasePage):
         update_row.setSpacing(8)
         check_btn = QPushButton("Check now")
         check_btn.clicked.connect(self.refresh_updates)
-        self.upgrade_btn = QPushButton("Upgrade system…")
+        self.upgrade_btn = QPushButton("Upgrade system")
         self.upgrade_btn.setObjectName("Primary")
         self.upgrade_btn.clicked.connect(self.upgrade)
         update_row.addWidget(check_btn)
@@ -185,6 +187,7 @@ class PackagesPage(BasePage):
             item.setData(0, Qt.ItemDataRole.UserRole, package)
             self.table.addTopLevelItem(item)
         self.table.setSortingEnabled(True)
+        self.table.fit_rows(max_rows=10, empty_height=96)
         self.install_btn.setEnabled(bool(self._results))
         self._selection_changed()
 
@@ -260,7 +263,7 @@ class PackagesPage(BasePage):
                 self.update_summary.setText("System is up to date.")
                 self.update_list.setPlainText("")
                 return
-            self.update_summary.setText(f"{len(entries)} update(s) available.")
+            self.update_summary.setText(f"{len(entries)} updates available")
             self.update_list.setPlainText(
                 "\n".join(
                     f"{entry.name}  {entry.old_version} → {entry.new_version}" for entry in entries
