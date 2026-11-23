@@ -90,7 +90,7 @@ Recommended terminals: `kitty` (default in the screenshot), `alacritty`,
 ## Install
 
 ```bash
-git clone https://github.com/Amirelox/Control-Panel-for-Arch-Linux.git
+git clone https://github.com/Amirelox/Control-Panel-for-Arch-Linux.git control-panel
 cd control-panel
 ./install.sh
 ```
