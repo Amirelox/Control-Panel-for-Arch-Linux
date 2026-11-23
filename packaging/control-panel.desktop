@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Control Panel
+GenericName=System Control Panel
+Comment=Monitor and control Arch Linux and Hyprland
+Exec=@EXEC@
+Icon=preferences-system
+Terminal=false
+Categories=System;Settings;Qt;
+Keywords=control;panel;system;hyprland;arch;network;audio;power;
+StartupNotify=true
+StartupWMClass=control-panel

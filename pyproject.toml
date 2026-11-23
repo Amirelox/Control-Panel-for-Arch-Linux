@@ -1,0 +1,79 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "control-panel"
+version = "2.0.0"
+description = "A fast, responsive control panel for Arch Linux and Hyprland"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Amir" }]
+keywords = ["arch", "hyprland", "control-panel", "qt", "wayland", "linux"]
+classifiers = [
+  "Environment :: X11 Applications :: Qt",
+  "Intended Audience :: End Users/Desktop",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Desktop Environment",
+  "Topic :: System :: Systems Administration",
+]
+dependencies = [
+  "PyQt6>=6.6",
+  "psutil>=5.9",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+  "pytest-qt>=4.4",
+  "ruff>=0.6",
+]
+
+[project.scripts]
+control-panel = "control_panel.app:main"
+
+[project.urls]
+Homepage = "https://github.com/Amirelox/Control-Panel-for-Arch-Linux"
+Repository = "https://github.com/Amirelox/Control-Panel-for-Arch-Linux"
+Issues = "https://github.com/Amirelox/Control-Panel-for-Arch-Linux/issues"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+control_panel = ["assets/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+qt_api = "pyqt6"
+addopts = "-q"
+filterwarnings = [
+  "ignore::DeprecationWarning",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
+ignore = [
+  "E501",   # line length is handled by the formatter
+  "B008",   # Qt APIs use function calls in defaults
+  "SIM105", # explicit try/except is clearer around cleanup code
+  "SIM108", # ternaries are not always clearer
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]
