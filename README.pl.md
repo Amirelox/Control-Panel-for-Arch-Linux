@@ -152,6 +152,11 @@ okna Qt.
 - Akcje niszczące wymagają potwierdzenia.
 - Sprawdzanie firewalla przy wejściu na stronę nie otwiera okna polkit.
 
+## Design
+
+Przegląd interfejsu oparto o metodę [unslop](https://x.com/heydamir) autorstwa
+Damira Sokolovsky'ego (@heydamir), na licencji CC BY 4.0.
+
 ## Licencja
 
 MIT — patrz [LICENSE](LICENSE).

@@ -199,6 +199,11 @@ Issues and pull requests are welcome. Please keep the rules:
 3. Pure parsers belong in `core/parsers.py` and need tests.
 4. User-facing text should be short and explain missing dependencies.
 
+## Design
+
+The interface pass was guided by the [unslop](https://x.com/heydamir) method by
+Damir Sokolovsky (@heydamir), licensed under CC BY 4.0.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
